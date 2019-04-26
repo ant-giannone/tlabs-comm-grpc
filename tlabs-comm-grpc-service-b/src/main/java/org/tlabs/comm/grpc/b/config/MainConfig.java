@@ -7,6 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.tlabs.comm.grpc.b.component.GreeterImpl;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Configuration
 public class MainConfig {
 
@@ -22,6 +26,21 @@ public class MainConfig {
     @Value("${org.tlabs.comm.grpc.b.service.greetings.port}")
     private String gRpcGreetingsPort;
 
+    @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.host}")
+    private String gRpcGreetingsTrustedHost;
+
+    @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.port}")
+    private String gRpcGreetingsTrustedPort;
+
+    @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.certs.folder}")
+    private String gRpcTrustedCertsFolder;
+
+    @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.certs.key}")
+    private String gRpcTrustedKey;
+
+    @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.certs.cert}")
+    private String gRpcTrustedCert;
+
 
     @Bean
     public String welcomeMessage() {
@@ -34,6 +53,18 @@ public class MainConfig {
     @Bean
     public Server gRpcServer() {
         return ServerBuilder.forPort(Integer.parseInt(gRpcGreetingsPort))
+                .addService(new GreeterImpl())
+                .build();
+    }
+
+    @Bean
+    public Server gRpcTrustedServer() {
+
+        Path gRpcTrustedKeyPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedKey);
+        Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
+
+        return ServerBuilder.forPort(Integer.parseInt(gRpcGreetingsTrustedPort))
+                .useTransportSecurity(gRpcTrustedCertPath.toFile(), gRpcTrustedKeyPath.toFile())
                 .addService(new GreeterImpl())
                 .build();
     }

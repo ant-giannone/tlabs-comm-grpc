@@ -2,12 +2,18 @@ package org.tlabs.comm.grpc.a.config;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.tlabs.comm.grpc.a.components.grpc.GreeterGrpc;
+
+import javax.net.ssl.SSLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Configuration
 public class MainConfig {
@@ -25,6 +31,18 @@ public class MainConfig {
 
     @Value("${org.tlabs.comm.grpc.a.service.greetings.port}")
     private String gRpcGreetingsPort;
+
+    @Value("${org.tlabs.comm.grpc.a.service.greetings.trusted.host}")
+    private String gRpcGreetingsTrustedHost;
+
+    @Value("${org.tlabs.comm.grpc.a.service.greetings.trusted.port}")
+    private String gRpcGreetingsTrustedPort;
+
+    @Value("${org.tlabs.comm.grpc.a.service.greetings.trusted.certs.folder}")
+    private String gRpcTrustedCertsFolder;
+
+    @Value("${org.tlabs.comm.grpc.a.service.greetings.trusted.certs.cert}")
+    private String gRpcTrustedCert;
 
 
     @Bean
@@ -45,8 +63,24 @@ public class MainConfig {
     }
 
     @Bean
+    public ManagedChannel gRpcGreetingsTrustedManagedChannel() throws SSLException {
+
+        Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
+
+        return NettyChannelBuilder.forAddress(gRpcGreetingsTrustedHost, Integer.parseInt(gRpcGreetingsTrustedPort))
+                .sslContext(GrpcSslContexts.forClient().trustManager(gRpcTrustedCertPath.toFile()).build())
+                .build();
+    }
+
+    @Bean
     public GreeterGrpc.GreeterBlockingStub greeterBlockingStub() {
 
         return GreeterGrpc.newBlockingStub(gRpcGreetingsManagedChannel());
+    }
+
+    @Bean
+    public GreeterGrpc.GreeterBlockingStub greeterTrustedBlockingStub() throws SSLException {
+
+        return GreeterGrpc.newBlockingStub(gRpcGreetingsTrustedManagedChannel());
     }
 }

@@ -26,6 +26,12 @@ public class WelcomeComponentImpl implements WelcomeComponent {
     @Autowired
     private GreeterGrpc.GreeterBlockingStub greeterBlockingStub;
 
+    @Autowired
+    private ManagedChannel gRpcGreetingsTrustedManagedChannel;
+
+    @Autowired
+    private GreeterGrpc.GreeterBlockingStub greeterTrustedBlockingStub;
+
 
     @Override
     public void welcome() {
@@ -47,5 +53,22 @@ public class WelcomeComponentImpl implements WelcomeComponent {
                 response.getMessage());
 
         gRpcGreetingsManagedChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void sendTrustedDataToGreetingsService() throws InterruptedException, StatusRuntimeException {
+
+        LOGGER.info("[START] :: gRPC trusted communication to Greetings service");
+
+        HelloRequest request = HelloRequest.newBuilder().setName("world").build();
+
+        LOGGER.info("[PROCESSING] :: gRPC trusted communication to Greetings service - send message");
+
+        HelloReply response = greeterTrustedBlockingStub.sayHello(request);
+
+        LOGGER.info("[END] :: gRPC trusted communication to Greetings service - response from gRPC channel: {}",
+                response.getMessage());
+
+        gRpcGreetingsTrustedManagedChannel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 }
