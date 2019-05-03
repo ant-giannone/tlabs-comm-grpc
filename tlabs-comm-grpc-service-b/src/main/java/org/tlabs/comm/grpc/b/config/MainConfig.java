@@ -66,9 +66,7 @@ public class MainConfig {
         Path gRpcTrustedKeyPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedKey);
         Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
 
-        LOGGER.info("Path gRpcTrustedKeyPath: {}", gRpcTrustedKeyPath.toUri().toString());
-
-        LOGGER.info("Path gRpcTrustedCertPath: {}", gRpcTrustedCertPath.toUri().toString());
+        LOGGER.info("\ngRpcGreetingsTrustedPort: {};", gRpcGreetingsTrustedPort);
 
         return ServerBuilder.forPort(Integer.parseInt(gRpcGreetingsTrustedPort))
                 .useTransportSecurity(gRpcTrustedCertPath.toFile(), gRpcTrustedKeyPath.toFile())

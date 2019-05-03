@@ -56,6 +56,8 @@ public class MainConfig {
     @Bean
     public ManagedChannel gRpcGreetingsManagedChannel() {
 
+        LOGGER.info("\ngRpcGreetingsHost: {};\ngRpcGreetingsPort: {}", gRpcGreetingsHost, gRpcGreetingsPort);
+
         return ManagedChannelBuilder
                 .forAddress(gRpcGreetingsHost, Integer.parseInt(gRpcGreetingsPort))
                 .usePlaintext()
@@ -67,7 +69,7 @@ public class MainConfig {
 
         Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
 
-        LOGGER.info("Path: {}; exists: {}", gRpcTrustedCertPath.toUri().toString(), gRpcTrustedCertPath.toFile().exists());
+        LOGGER.info("\ngRpcGreetingsTrustedHost: {};\ngRpcGreetingsTrustedPort: {}", gRpcGreetingsTrustedHost, gRpcGreetingsTrustedPort);
 
         return NettyChannelBuilder.forAddress(gRpcGreetingsTrustedHost, Integer.parseInt(gRpcGreetingsTrustedPort))
                 .sslContext(GrpcSslContexts.forClient().trustManager(gRpcTrustedCertPath.toFile()).build())
