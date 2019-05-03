@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+
+  service-a:
+    container_name: service-a
+    build:
+      context: ./tlabs-comm-grpc-service-a/
+      args:
+        JAR_FILE: target/*.jar
+    volumes:
+      - "./shared/a/certs:/certs"
+    networks:
+      - tlabs-net
+
+  service-b:
+    container_name: service-b
+    build:
+      context: ./tlabs-comm-grpc-service-b/
+      args:
+        JAR_FILE: target/*.jar
+    volumes:
+      - "./shared/b/certs:/certs"
+    networks:
+      - tlabs-net
+
+networks:
+  tlabs-net: {}

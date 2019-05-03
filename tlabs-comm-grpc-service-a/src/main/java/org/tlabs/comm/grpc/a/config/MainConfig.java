@@ -67,6 +67,8 @@ public class MainConfig {
 
         Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
 
+        LOGGER.info("Path: {}; exists: {}", gRpcTrustedCertPath.toUri().toString(), gRpcTrustedCertPath.toFile().exists());
+
         return NettyChannelBuilder.forAddress(gRpcGreetingsTrustedHost, Integer.parseInt(gRpcGreetingsTrustedPort))
                 .sslContext(GrpcSslContexts.forClient().trustManager(gRpcTrustedCertPath.toFile()).build())
                 .build();

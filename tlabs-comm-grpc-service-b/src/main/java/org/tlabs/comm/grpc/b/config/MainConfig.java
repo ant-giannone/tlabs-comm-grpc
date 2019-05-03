@@ -2,17 +2,20 @@ package org.tlabs.comm.grpc.b.config;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.tlabs.comm.grpc.b.component.GreeterImpl;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
 public class MainConfig {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(MainConfig.class);
 
     @Value("${org.tlabs.comm.grpc.b.common.message.welcome}")
     private String welcomeMessage;
@@ -32,7 +35,7 @@ public class MainConfig {
     @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.port}")
     private String gRpcGreetingsTrustedPort;
 
-    @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.certs.folder}")
+    @Value("${org.tlabs.comm.grpc.a.service.greetings.trusted.certs.folder}")
     private String gRpcTrustedCertsFolder;
 
     @Value("${org.tlabs.comm.grpc.b.service.greetings.trusted.certs.key}")
@@ -62,6 +65,10 @@ public class MainConfig {
 
         Path gRpcTrustedKeyPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedKey);
         Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
+
+        LOGGER.info("Path gRpcTrustedKeyPath: {}", gRpcTrustedKeyPath.toUri().toString());
+
+        LOGGER.info("Path gRpcTrustedCertPath: {}", gRpcTrustedCertPath.toUri().toString());
 
         return ServerBuilder.forPort(Integer.parseInt(gRpcGreetingsTrustedPort))
                 .useTransportSecurity(gRpcTrustedCertPath.toFile(), gRpcTrustedKeyPath.toFile())
