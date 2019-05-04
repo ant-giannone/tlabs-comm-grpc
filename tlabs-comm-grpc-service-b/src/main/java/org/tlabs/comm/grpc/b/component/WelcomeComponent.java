@@ -7,6 +7,4 @@ public interface WelcomeComponent {
     public void welcome();
 
     void startToListen() throws IOException, InterruptedException;
-
-    void startToListenTrusted() throws IOException, InterruptedException;
 }

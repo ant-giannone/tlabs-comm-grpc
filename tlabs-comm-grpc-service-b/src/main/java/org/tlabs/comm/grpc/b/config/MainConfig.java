@@ -7,8 +7,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.tlabs.comm.grpc.b.component.GreeterImpl;
+import org.tlabs.comm.grpc.b.component.grpc.GreeterImpl;
+import org.tlabs.comm.grpc.b.data.net.NetInfo;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -61,16 +64,19 @@ public class MainConfig {
     }
 
     @Bean
-    public Server gRpcTrustedServer() {
+    public NetInfo netInfo() {
 
-        Path gRpcTrustedKeyPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedKey);
-        Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
+        NetInfo.Builder builder = new NetInfo.Builder();
 
-        LOGGER.info("\ngRpcGreetingsTrustedPort: {};", gRpcGreetingsTrustedPort);
+        try {
 
-        return ServerBuilder.forPort(Integer.parseInt(gRpcGreetingsTrustedPort))
-                .useTransportSecurity(gRpcTrustedCertPath.toFile(), gRpcTrustedKeyPath.toFile())
-                .addService(new GreeterImpl())
-                .build();
+            return builder.setHost(InetAddress.getLocalHost().getHostAddress())
+                    .build();
+        } catch (UnknownHostException e) {
+
+            LOGGER.error("Network info unavailable: {}", e.getMessage());
+        }
+
+        return builder.build();
     }
 }

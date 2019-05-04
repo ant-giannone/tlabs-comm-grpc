@@ -3,6 +3,7 @@ version: '3'
 services:
 
   ngnix:
+    container_name: ngnix
     image: nginx:1.13.11
     ports:
       - 1443:1443

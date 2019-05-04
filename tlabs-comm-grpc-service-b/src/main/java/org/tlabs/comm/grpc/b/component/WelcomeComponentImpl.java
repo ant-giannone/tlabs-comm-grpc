@@ -19,9 +19,6 @@ public class WelcomeComponentImpl implements WelcomeComponent {
     @Autowired
     private Server gRpcServer;
 
-    @Autowired
-    private Server gRpcTrustedServer;
-
     public void welcome() {
         LOGGER.info(welcomeMessage);
     }
@@ -39,23 +36,6 @@ public class WelcomeComponentImpl implements WelcomeComponent {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
                 LOGGER.error("*** shutting down gRPC server since JVM is shutting down");
                 gRpcServer.shutdown();
-                LOGGER.error("*** server shut down");
-            }
-        });
-    }
-
-    @Override
-    public void startToListenTrusted() throws IOException, InterruptedException {
-
-        gRpcTrustedServer.start();
-        gRpcTrustedServer.awaitTermination();
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                LOGGER.error("*** shutting down gRPC server since JVM is shutting down");
-                gRpcTrustedServer.shutdown();
                 LOGGER.error("*** server shut down");
             }
         });
