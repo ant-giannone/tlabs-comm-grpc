@@ -24,8 +24,30 @@ services:
     networks:
       - tlabs-net
 
-  service-b:
-    container_name: service-b
+  service-b1:
+    container_name: service-b1
+    build:
+      context: ./tlabs-comm-grpc-service-b/
+      args:
+        JAR_FILE: target/*.jar
+    volumes:
+      - "./shared/b/certs:/certs"
+    networks:
+      - tlabs-net
+
+  service-b2:
+    container_name: service-b2
+    build:
+      context: ./tlabs-comm-grpc-service-b/
+      args:
+        JAR_FILE: target/*.jar
+    volumes:
+      - "./shared/b/certs:/certs"
+    networks:
+      - tlabs-net
+
+  service-b3:
+    container_name: service-b3
     build:
       context: ./tlabs-comm-grpc-service-b/
       args:

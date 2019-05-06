@@ -64,6 +64,13 @@ public class MainConfig {
                 .build();
     }
 
+    /**
+     * https://github.com/grpc/grpc-java/issues/3268
+     *
+     * I'm refer to a comment sent by ericgribkoff
+     *
+     * Channels are expensive to create, and the general recommendation is to use one per application, shared among the service stubs.
+     * */
     @Bean
     public ManagedChannel gRpcGreetingsTrustedManagedChannel() throws SSLException {
 
