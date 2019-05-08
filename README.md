@@ -1,39 +1,53 @@
 Overview
 ---
 
-Il presente articolo illustra un utilizzo di base del protocollo gRPC e proto-buffer protocol per instaurare una 
-comunicazione tra due servizi basata su protocollo binario e serializzazione/deserializzazione dei dati scambiati.
+This article illustrates a basic use of the gRPC protocol and proto-buffer protocol to establish a  
+communication between two services based on binary protocol and serialization / deserialization of the data exchanged.
 
-Entrambi i frameworks che stiamo adoperando sono stati realizzati in casa Google.
-Di seguito i link ad entrambi i frameworks: 
-    - Proto-buffer protocol:    https://developers.google.com/protocol-buffers/docs/overview
-    - gRPC:                     https://grpc.io/docs/
-
-Lo scenario descritto di seguito vede i seguenti attori coinvolti:
- - Servizio A:  gRPC client
- - Servizio B:  gRPC server
- - NGNIX:       gRPC proxy-pass
-
-Emtrambi i servizi sono realizzati come applicazioni Spring-boot ma non fanno nulla di particolare in se: ciò che questo articolo vuole illustrare è la comunicazione tra le parti coinvolte, che nello specifico avviene attraverso SSL/TLS.
-
-Il deploy degli attori coinvolti avviene attraverso container docker, organizzati tra loro attraverso un file docker-compose.
+Both frameworks we are using have been made at Google.  
+Below are links to both frameworks: 
+- **Proto-buffer protocol:** https://developers.google.com/protocol-buffers/docs/overview 
+- **gRPC:** https://grpc.io/docs/
 
 
-### Note:
-Tenete conto del fatto che alcune finezze o processi di automazione potrebbero non essere stati appliati, non escludo migliorie future a ttu ciò che scrivo e pubblico. 
+The scenario described below sees the following actors involved:
 
-***Sono aperto a scambi di opinione e consigli sul come migliorare se non adirittura riscrivere quello che ho pubblicato. Il confronto mi è utile sia a comprendere meglio ciò che studio ed applico, si a "smontare" se è necessario alcune mie convinzioni che magari potrei scoprire essere errate.***
+- **Service A:** gRPC client
+- **Service B:** gRPC server
+- **NGNIX:** gRPC proxy-pass
 
+Both services are implemented as Spring-boot applications but do nothing in particular:  
+what this article wants to illustrate is the communication between the components involved,  
+which specifically takes place through SSL / TLS.
 
-Qualche parola sul cosa stiamo adoperando
+The deployment of the actors involved takes place through docker containers,  
+organized between them through a docker-compose file.
 ---
 
-#### Proto-buffer protocol
+##### Note
+Keep in mind that what I write at the moment is minimal and  
+I do not exclude future improvements to everything I write and public.
+   
+***I am open to exchanges of views and appreciate receiving advice to improve or rewrite what I have published.  
+The comparison with the community is useful both to better understand what I study and apply,  
+but it is also useful to "disassemble" some of my beliefs that I may discover to be incorrect.***
 
-Esso è descritto come uno strumento che permette la serializzazione di dati strutturati in modo più flessibile e veloce rispetto alla serializzazione XML. Una volta descritto secondo sintassi "proto" i vostri dati e servizi, vengono generati i componenti necessari per effettuare in modo semplice sia la lettura che la scrittura dei dati stessi, sia da stream che da linguaggi differenti. 
 
-Tra le altre cose tutto è pensato per accogliere senza problemi la repocompatibilità del dato: ciò permette alle vecchie applicazione di continuare ad adoperare le vecchie versioni di struttura del dato senza che le nuove modifice a quasta ultima rischino di mandare in crash gli applicativi stessi. La sintassi "proto" rimanda un pò a quella JSON ma con alcune differenze, ad esempio possiamo
-descrivere un dato strutturato come la scheda di un libro nel seguente modo:
+A few notes on what we are using
+---
+
+**Proto-buffer protocol**
+
+It is described as a tool that allows the serialization of structured data in a more flexible and faster  
+way than XML serialization. Once you have described your data and services according to syntax "proto",  
+the necessary components are generated to perform both reading and writing of data in a simple way.  
+The reading and writing modalities between client and server can take place either as a single invocation or  
+treated as a data stream.
+
+Among other things, it is designed to easily accommodate data backward compatibility: this allows the old applications  
+to continue to use the old data structure versions without the new modifications threatening to cause application crashes.  
+The "proto" syntax refers a bit to the JSON syntax but with some differences, for example we can describe a data structured  
+in the following way:
 
 ```proto
 message Book {
@@ -42,34 +56,45 @@ message Book {
     required string author = 3;
 }
 ```
-La struttura è semplice, abbiamo uno o più campi univoci e numerati. Ogni campo ha un nome ed un valore il cui tipo 
-può essere: integer, floating-point, booleans, strings, raw bytes oppure ulteriri dati strutturati per la definizione di 
-strutture gerarchiche. 
 
-I messaggi e servizi vengono salvati su file la cui estensione è ".proto". 
-Teniamo sempre a mente che la descrizione della sintassi "proto" esiste per rendere human-friendly la lettura della struttura dati: proto-buffer by default encoda il dato in formato binario e non nasce come rappresentazione testuale del dato così come accade per XML e JSON.
+The structure is simple, we have one or more unique and numbered fields. Each field has a name and a value.  
+The allowed types are the following: integer, floating-point, booleans, strings, raw bytes or nested structured  
+data for the definition of hierarchical structures.
 
-Per avere maggiori chiarimenti in merito all'argomento dell'encoding consiglio il seguente link: 
+Messages and services are saved on files whose extension is ".proto". 
+We always keep in mind that the description of the "proto" syntax exists to make the reading  
+of the data structure human-friendly: proto-buffer by default encodes the data in binary format and  
+it was not born as a textual representation of the data as happens for XML or JSON.
+
+To get more clarification on the subject of the encoding, I recommend the following link: 
 https://developers.google.com/protocol-buffers/docs/encoding
+---
 
+**gRPC**
 
-#### gRPC
+Through gRPC a client application can transparently invoke methods of a server application that resides on a different machine,  
+using component methods such as local calls. Like many RPC-based systems, gRPC is also based on the idea of ​​defining services  
+by specifying the methods that can be invoked remotely and which parameters are required to obtain an outgoing response.  
+From a server point of view, it implements the interface that the client can invoke remotely.  
+gRPC uses protobuf as a serialization and desarialization protocol for the messages exchanged.  
+In fact protobuffer is the IDL used by gRPC for the definition of the interfaces of the services and the data structures exchanged.
 
-Attraverso gRPC un applicazione client può invocare metodi su di un applicazione server che risiede su di una differente macchina come se il componente che invoca sia un oggetto locale all'enviruvment sul quale sta operando. Come molti sistemi su base RPC, anche gRPC si basa sull'idea di definire dei servizi specificandone i metodi che possono essere invocati da remoto ed ai quali vengono inviati i parametri richiesti ed ottenendo un parametro in uscita come risposta. Da un punto di vista dell'entità server, questoultimo implementa l'interfaccia che il clienti può invocare da remoto. gRPC adopera protobuf come protocollo di serializzazione e desarializzazione
-dei messaggi scambiati tra client e server, quindi di fatto protobuffer è l'IDL adoperato da gRPC con il quale sono definite interfacce dei servizi e strutture dati di scambio.
+gRPC allows communication between client and server in unary or stream terms: 
+- in the first case the client sends a single request to the server and it responds with an outgoing data,  
+as if the execution were a call to a local method
+- in the second case both client and server can be set up to continuously send and receive a series of data until  
+they continue to transit. gRPC guarantees the order of messages within an individual RPC call.  
+Communication on a stream basis can take place on the client side, only on the server side or can be bidirectional
 
-gRPC permette comunicazione tra client e server in termini unari oppure di stream: 
-    - il primo caso il client invia una singola richiesta al server e questo ultimo risponde con una response, come se fosse l'esecuzione di una chiamata a funzione
-    - nel secondo case sia client che server possono essere predisposti per inviare e ricevere i modo continuo una serie di messaggi finchè questi continuano a transitare. gRPC garantisce l'ordine dei messaggi all'interno di una chiamata RPC individuale. Lo streaming può avvenire lato client, solo lato server oppure può essere bidirezionale
+More details can be found at this link: https://grpc.io/docs/guides/concepts/
 
-Maggiori dettagli in merito li trovate a questo link: https://grpc.io/docs/guides/concepts/
+gRPC also supports different authentication mechanisms:
+- SSL / TLS: gRPC has this type of integration and is the recommended method
+- Token-based authentication with Google: OAuth2 when accessing Google API through gRPC
+- Extensions to third-party Auths: gRPC provides an API for the creation of integration  
+plugins with other auth mechanisms
 
-gRPC supporta anche diversi meccanismi di autenticazione:
-    - SSL/TLS: gRPC possiede questo tipo di inetgrazione ed è il metodo consigliato
-    - Token-based authentication with Google: OAuth2 quando si accede ad API Google attraverso gRPC
-    - Estensioni a Auth parti terze: gRPC prevede un API per la creazione di plugin di integrazione con altri meccanismi di auth
-
-Maggiori dettagli in merito li trovate a questo link: https://grpc.io/docs/guides/auth/
+More details can be found at this link: https://grpc.io/docs/guides/auth/
 
 
 Come eseguire build e deploy
