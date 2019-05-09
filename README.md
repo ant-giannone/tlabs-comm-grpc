@@ -22,10 +22,11 @@ which specifically takes place through SSL / TLS.
 
 The deployment of the actors involved takes place through docker containers,  
 organized between them through a docker-compose file.
----
+
 
 ##### Note
-Keep in mind that what I write at the moment is minimal and  
+---
+Keep in mind that what I wrote at the moment is minimal and  
 I do not exclude future improvements to everything I write and public.
    
 ***I am open to exchanges of views and appreciate receiving advice to improve or rewrite what I have published.  
@@ -68,7 +69,7 @@ it was not born as a textual representation of the data as happens for XML or JS
 
 To get more clarification on the subject of the encoding, I recommend the following link: 
 https://developers.google.com/protocol-buffers/docs/encoding
----
+
 
 **gRPC**
 
@@ -97,22 +98,248 @@ plugins with other auth mechanisms
 More details can be found at this link: https://grpc.io/docs/guides/auth/
 
 
-Come eseguire build e deploy
+How to build and deploy
 ---
 
+First to all we need to clone the repo and move into main project folder
 
-Cosa abbiamo realizzato
----
-
-### gPRC communication by TLS
----
-
-openssl command to generate .pem and .crt files
-```
-openssl req -x509 -newkey rsa:1024 -keyout ./my-test-key.pem -out ./my-test-cert.crt -days 999 -subj "/CN=localhost"
+```bash
+git clone https://github.com/ant-giannone/tlabs-comm-grpc.git
 ```
 
-openssl command to convert .pem file into PKCS8 format
+We have a maven project structured as parent-pom project with two modules: 
+
+- tlabs-comm-grpc-service-a
+- tlabs-comm-grpc-service-b
+
+We also have a folder, "shared", that contains ngnix config and fake certificates
+
+To build the project, digit the following command:
+
+```bash
+mvn clean package
+```
+
+To deploy all as docker containers, execute the following command:
+
+```bash
+docker-compose -f docker-compose.yml up -d
+```
+
+The docker compose file is organized to create:
+- three server instances(b1/b2/b3),
+- an NGNIX that executes balancing and proxy-pass of the gRPC requests
+- a client instance that invoke gRPC calls in direction to NGNIX and receive a response by 
+one of the three server instances balanced by NGNIX
+
+You can see the logs with the following command:
+
+```bash
+docker logs -f <container-name> 
+
+docker logs -f service-a
+
+docker logs -f service-b1
+```
+
+or use your integration IDE, I'm using IntelliJ and docker integration
+
+If you verify logs for all three server instances, you can see the logs that prints what IP create response for client request
+
+
+What we have achieved
+---
+
+#### Key and Certificate
+Well, first I reports the command used to generate fake key and certificate(.pem; .crt)
+
+```
+openssl req -x509 -newkey rsa:1024 -keyout ./my-test-key.pem -out ./my-test-cert.crt -days 999 -subj "/CN=ngnix"
+```
+Note: attention to create all with the "common name" correct for host, in this case the container_name of ngnix **/CN=ngnix**
+
+Well, now digit openssl command to convert .pem file into PKCS8 format
 ```
 openssl pkcs8 -topk8 -nocrypt -in my-test-key.pem -out my-test-key-PKCS8.pem
+```
+
+#### Protobuf service definition file
+
+I'm using proto file from Google example
+
+```bash
+// The greeting service definition.
+service Greeter {
+    // Sends b greeting
+    rpc SayHello (HelloRequest) returns (HelloReply) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+    string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+    string message = 1;
+}
+```
+
+It's used to define services to invoke and data structure to use.  
+The maven pom file contains the plugin used to compile and build all  
+components used for client stub and services implementations
+
+```java
+<plugin>
+    <groupId>org.xolstice.maven.plugins</groupId>
+    <artifactId>protobuf-maven-plugin</artifactId>
+    <version>0.5.1</version>
+    <configuration>
+        <protocArtifact>com.google.protobuf:protoc:${com.google.protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+        <pluginId>grpc-java</pluginId>
+        <pluginArtifact>io.grpc:protoc-gen-grpc-java:${io.grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+        <protoSourceRoot>
+            ${basedir}/src/main/resources/proto
+        </protoSourceRoot>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>compile</goal>
+                <goal>compile-custom</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-enforcer-plugin</artifactId>
+    <version>1.4.1</version>
+    <executions>
+        <execution>
+            <id>enforce</id>
+            <goals>
+                <goal>enforce</goal>
+            </goals>
+            <configuration>
+                <rules>
+                    <requireUpperBoundDeps/>
+                </rules>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+#### Service A
+
+Here, you can see the snipped code that simulates many request from client
+
+```java
+
+List<Thread> threads = new ArrayList<>();
+
+Runnable runnable = new Runnable() {
+    @Override
+    public void run() {
+
+        try {
+
+            welcomeComponent.sendTrustedDataToGreetingsService();
+        }catch(StatusRuntimeException e) {
+
+            LOGGER.error("An error occurred: {}", e.getStatus().getDescription());
+        } catch (InterruptedException e) {
+
+            LOGGER.error("An error occurred: {}", e.getMessage());
+        }
+    }
+};
+
+Random random = new Random();
+
+for(int i=0; i<45; i++) {
+
+    threads.add(new Thread(runnable));
+
+    try {
+
+        Thread.sleep(random.nextInt(8000)+8000);
+        threads.get(i).start();
+    } catch (InterruptedException e) {
+
+        LOGGER.error("An error occurred on sleep setting: {}", e.getMessage());
+    }
+}
+```
+
+#### Service B
+
+Greetings gRPC service implementation and annotated as Spring component
+
+```java
+@Component
+public class GreeterImpl
+        extends org.tlabs.comm.grpc.b.components.grpc.GreeterGrpc.GreeterImplBase
+    implements GrpcService {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(GreeterImpl.class);
+
+    @Autowired
+    protected NetInfo netInfo;
+
+
+
+    @Override
+    public void sayHello(org.tlabs.comm.grpc.b.components.grpc.HelloRequest req, StreamObserver<org.tlabs.comm.grpc.b.components.grpc.HelloReply> responseObserver) {
+
+        LOGGER.info("[START] ::  Say-Hello service response from host: {}", netInfo.toString());
+
+        org.tlabs.comm.grpc.b.components.grpc.HelloReply reply = org.tlabs.comm.grpc.b.components.grpc.HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+}
+```
+
+The server: how to create it and how it is integrated into spring IoC
+
+All gRPC services extends an abstract class that implements io.grpc.BindableService interface,
+so we can inject all services that implements same interface as follow, in you own spring component:
+
+```java
+
+@Component
+public class GrpcServerImpl implements GrpcServer {
+
+    @Autowired
+    protected List<BindableService> grpcServers;
+}
+```
+
+Well, now we can create gRPC server and register all defined services as follow:
+
+```java
+
+    @Override
+    public void start() throws IOException, InterruptedException {
+
+        ServerBuilder<?> serverBuilder = ServerBuilder.forPort(Integer.parseInt(gRpcGreetingsTrustedPort))
+                .useTransportSecurity(gRpcTrustedCertPath.toFile(), gRpcTrustedKeyPath.toFile());
+
+        grpcServers.stream().forEach(bindableService -> serverBuilder.addService(bindableService));
+
+        this.server = serverBuilder.build();
+
+        this.server.start();
+        this.server.awaitTermination();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+            LOGGER.error("*** shutting down gRPC server since JVM is shutting down");
+            server.shutdown();
+            LOGGER.error("*** server shut down");
+        }));
+    }
 ```
