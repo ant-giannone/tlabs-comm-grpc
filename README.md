@@ -32,7 +32,8 @@ I do not exclude future improvements to everything I write and public.
 ***I am open to exchanges of views and appreciate receiving advice to improve or rewrite what I have published.  
 The comparison with the community is useful both to better understand what I study and apply,  
 but it is also useful to "disassemble" some of my beliefs that I may discover to be incorrect.***
-
+##### End Note :) 
+---
 
 A few notes on what we are using
 ---
