@@ -235,6 +235,45 @@ components used for client stub and services implementations
 
 #### Service A
 
+How to create gRPC channel in plain text
+
+```java
+
+    @Bean
+    public ManagedChannel gRpcGreetingsManagedChannel() {
+
+        LOGGER.info("\ngRpcGreetingsHost: {};\ngRpcGreetingsPort: {}", gRpcGreetingsHost, gRpcGreetingsPort);
+
+        return ManagedChannelBuilder
+                .forAddress(gRpcGreetingsHost, Integer.parseInt(gRpcGreetingsPort))
+                .usePlaintext()
+                .build();
+    }
+```
+
+How to create gRPC channel with ssl/tls
+```java
+@Bean
+public ManagedChannel gRpcGreetingsTrustedManagedChannel() throws SSLException {
+
+    Path gRpcTrustedCertPath = Paths.get(gRpcTrustedCertsFolder, gRpcTrustedCert);
+
+    return NettyChannelBuilder.forAddress(gRpcGreetingsTrustedHost, Integer.parseInt(gRpcGreetingsTrustedPort))
+            .sslContext(GrpcSslContexts.forClient().trustManager(gRpcTrustedCertPath.toFile()).build())
+            .build();
+}
+```
+
+How to create the bean that permit injection of the client-stub for gRPC call invocation
+```java
+
+    @Bean
+    public GreeterGrpc.GreeterBlockingStub greeterTrustedBlockingStub() throws SSLException {
+
+        return GreeterGrpc.newBlockingStub(gRpcGreetingsTrustedManagedChannel());
+    }
+```
+
 Here, you can see the snipped code that simulates many request from client
 
 ```java
