@@ -264,7 +264,8 @@ public ManagedChannel gRpcGreetingsTrustedManagedChannel() throws SSLException {
 }
 ```
 
-How to create the bean that permit injection of the client-stub for gRPC call invocation
+How to create the bean that permit injection of the client-stub for gRPC call invocation.  
+In this case we use **BlockingStub**, then we are using the client-side **unary** and blocking gRPC invocation call
 ```java
 
     @Bean
