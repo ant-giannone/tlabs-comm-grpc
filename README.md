@@ -384,3 +384,44 @@ Well, now we can create gRPC server and register all defined services as follow:
         }));
     }
 ```
+
+Notes
+---
+gRPC channel creation is expensive, so we need to create the channle one time and during shutdown app we can destroy correctly the channel. We never create and destroy the channel any time, we use a channel per application!
+
+```java
+
+@Component
+public class ShutdownHandler implements DisposableBean {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(ShutdownHandler.class);
+
+    @Autowired
+    private ManagedChannel gRpcGreetingsTrustedManagedChannel;
+
+    @Autowired
+    private ManagedChannel gRpcGreetingsManagedChannel;
+
+    @Override
+    public void destroy() throws Exception {
+
+        LOGGER.info("[START] :: Shutdown phase...");
+
+        if(!gRpcGreetingsManagedChannel.isShutdown() && !gRpcGreetingsManagedChannel.isTerminated()) {
+
+            LOGGER.info("[PROCESSING] :: Shutdown phase: shutdown gRPC channel");
+
+            gRpcGreetingsManagedChannel.shutdownNow();
+        }
+
+        if(!gRpcGreetingsTrustedManagedChannel.isShutdown() && !gRpcGreetingsTrustedManagedChannel.isTerminated()) {
+
+            LOGGER.info("[PROCESSING] :: Shutdown phase: shutdown gRPC trusted channel");
+
+            gRpcGreetingsTrustedManagedChannel.shutdownNow();
+        }
+
+        LOGGER.info("[END] :: Shutdown phase...");
+    }
+}
+```
