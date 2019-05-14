@@ -347,7 +347,7 @@ public class GreeterImpl
 #### The server: how to create it and how it is integrated into spring IoC
 
 All gRPC services extends an abstract class that implements io.grpc.BindableService interface,
-so we can inject all services that implements same interface as follow, in you own spring component:
+so we can inject all services that implements same interface as follow, in your own spring component:
 
 ```java
 
